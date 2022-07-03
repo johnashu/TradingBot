@@ -1,6 +1,7 @@
 #  MarketData
 import asyncio
 import websockets
+from datetime import datetime
 from kucoin.client import WsToken
 from kucoin.ws_client import KucoinWsClient
 from includes.config import *
@@ -11,20 +12,6 @@ from core.user import Account
 
 
 class ScanMarket:
-
-    mark_price = None
-    buy_price = 0
-    sell_price = 0
-    buy_sell = "buy"
-    new_trade = True
-
-    sell_order_num = 0
-    buy_order_num = 0
-
-    sell_perc = 1.005
-    stop_loss_perc = 0.995
-    swing_perc = 0.995
-
     def __init__(
         self,
         creds: dict,
@@ -45,13 +32,12 @@ class ScanMarket:
         self.topic = f"/{market}/level{level}Depth{depth}"
         self.topic = f"/market/ticker"
         self.all_pairs = pairs["all_pairs"]
-        self.path = f"{self.topic}:{all_pairs}"
+        self.path = f'{self.topic}:{pairs["all_pairs"]}'
 
         self.pairs = pairs
 
     def display_prices(
         self,
-        stop_loss: str,
         price,
         data,
         pair,
@@ -62,7 +48,7 @@ class ScanMarket:
         spaces = "-" * 85
         log.info(spaces)
         log.info(
-            f"Pair {pair}  ::  SL ${stop_loss}  ::  Price ${price}  ::  Buy ${self.buy_price}  ::  Sell ${self.sell_price}  ::  Mark ${self.mark_price}"
+            f"Pair {pair.name}  ::  SL ${pair.stop_loss}  ::  Price ${price}  ::  Buy ${pair.buy_price}  ::  Sell ${pair.sell_price}  ::  Mark ${pair.mark_price}"
         )
 
         log.info(
@@ -71,7 +57,7 @@ class ScanMarket:
 
         log.info(f"acc_amount_tokenA: {acc_amount_tokenA}")
         log.info(f"acc_amount_tokenB: {acc_amount_tokenB}")
-        log.info(self.buy_sell)
+        log.info(pair.buy_sell)
 
         if self.verbose:
             log.info(data)
@@ -79,105 +65,95 @@ class ScanMarket:
                 f"""
             {pair}:
             Price: {price}
-            Sell Price: {self.sell_price}
+            Sell Price: {pair.sell_price}
             Volume: {volume}
             
             """
             )
         log.info(spaces)
 
-    def reset_data(self):
-        self.buy_sell = "buy"
-        self.new_trade = True
-        self.mark_price = None
-        self.buy_price = 0
-        self.sell_price = 0
-        self.sell_order_num = 0
-        self.buy_order_num = 0
-
-    def calc_buy_price(self, decimals):
-        price = round(self.mark_price * self.swing_perc, decimals)
-        log.info(f"Buy in Price  ${price}  ::  Mark Price  ${self.mark_price}")
+    def calc_buy_price(self, pair, current_price):
+        price = round(pair.mark_price * pair.swing_perc, pair.decimals)
+        log.info(
+            f"{pair.name}  ::  Price ${current_price}  ::  Buy in Price  ${price}  ::  Mark Price  ${pair.mark_price}"
+        )
         return price
 
-    async def place_buy_order(self, price, pair, logs_args, token_decimals, amount):
-        if price <= self.calc_buy_price(token_decimals):
+    async def place_buy_order(self, price, pair, logs_args):
+        if price <= self.calc_buy_price(pair, price):
             log.info(f"Setting Buy Order: {price}")
             self.display_prices(*logs_args)
-            self.buy_order_num = await self.trade.limit_order(
-                pair, "buy", str(amount), price
+            pair.buy_order_num = await self.trade.limit_order(
+                pair.name, "buy", str(pair.amount), price
             )
             log.info(
-                f"SET BUY Limit Order for {amount} ONE @ ${price} for ${price * amount}\n{self.buy_order_num}"
+                f"SET BUY Limit Order for {pair.amount} {pair.name} @ ${price} for ${price * pair.amount}\n{pair.buy_order_num}"
             )
-            self.buy_price = price
-            self.sell_price = round(price * self.sell_perc, token_decimals)
-            self.new_trade = False
+            pair.buy_price = price
+            pair.sell_price = round(price * pair.sell_perc, pair.decimals)
+            pair.new_trade = False
 
-    async def place_sell_order(self, pair, acc_amount_tokenB, logs_args, amount):
-        if acc_amount_tokenB[0]["holds"] == "0" and self.buy_sell != "sell":
+    async def place_sell_order(self, pair, acc_amount_tokenB, logs_args):
+        if acc_amount_tokenB[0]["holds"] == "0" and pair.buy_sell != "sell":
             log.info(
-                f"BUY Order Filled for {amount} ONE @ ${self.buy_price} for ${self.buy_price * amount}"
+                f"BUY Order Filled for {pair.amount} ONE @ ${pair.buy_price} for ${pair.buy_price * pair.amount}"
             )
             self.display_prices(*logs_args)
-            self.sell_order_num = await self.trade.limit_order(
-                pair, "sell", str(amount), str(self.sell_price)
+            pair.sell_order_num = await self.trade.limit_order(
+                pair.name, "sell", str(pair.amount), str(pair.sell_price)
             )
             log.info(
-                f"SELL Limit Order for {amount} ONE @ ${self.sell_price} for ${self.sell_price * amount}\n{self.sell_order_num}"
+                f"SELL Limit Order for {pair.amount} ONE @ ${pair.sell_price} for ${pair.sell_price * pair.amount}\n{pair.sell_order_num}"
             )
-            self.buy_sell = "sell"
+            pair.buy_sell = "sell"
+            pair.stop_loss = round(pair.buy_price * pair.stop_loss_perc, pair.decimals)
 
-    async def check_filled(self, logs_args, amount):
+    async def check_filled(self, pair, logs_args):
 
-        filled = await self.trade.is_filled(self.sell_order_num, amount)
+        filled = await self.trade.is_filled(pair.sell_order_num, pair.amount)
         if filled:
             self.reset_data()
             log.info(
-                f"LIMIT SELL Order Filled for {amount} ONE @ ${self.sell_price} for ${self.sell_price * amount}"
+                f"LIMIT SELL Order Filled for {pair.amount} ONE @ ${pair.sell_price} for ${pair.sell_price * pair.amount}"
             )
             return True
         self.display_prices(*logs_args)
         return False
 
-    async def check_stop_loss(
-        self, price, pair, stop_loss, acc_amount_tokenA, logs_args, amount
-    ):
-        if price <= stop_loss and float(acc_amount_tokenA[0]["holds"]) >= 1:
+    async def check_stop_loss(self, price, pair, acc_amount_tokenA, logs_args):
+        if price <= pair.stop_loss and float(acc_amount_tokenA[0]["holds"]) >= 1:
             # cancel_all_orders
             cancelled = await self.trade.cancel_all_orders(pair)
             log.info(f"MARKET SELL Order Filled: {cancelled}")
             self.display_prices(*logs_args)
-            wallet_amount = amount  # float(acc_amount_tokenA[0]["available"])
-            market_sell = await self.trade.market_trade(pair, "sell", wallet_amount)
+            wallet_amount = pair.amount  # float(acc_amount_tokenA[0]["available"])
+            market_sell = await self.trade.market_trade(
+                pair.name, "sell", wallet_amount
+            )
             log.info(f"SELL Order Filled for {wallet_amount} ONE\n{market_sell}")
             self.reset_data()
 
     async def deal_msg(self, msg):
         topic = msg["topic"]
 
-        for pair in self.all_pairs.split(","):
-            if topic == f"{self.topic}:{pair}":
+        for p in self.all_pairs.split(","):
+            if topic == f"{self.topic}:{p}":
                 data = msg["data"]
-
-                amount = self.pairs[pair]["amount"]
-
-                tokenA, tokenB = pair.split("-")
-                token_decimals = pairs[pair]["decimals"]
+                tokenA, tokenB = p.split("-")
 
                 price = float(data["bestAsk"])
                 volume = float(data["bestAskSize"])
 
-                if not self.mark_price:
-                    self.mark_price = round(price, token_decimals)
+                pair = self.pairs[p]
+
+                if not pair.mark_price:
+                    pair.mark_price = round(price, pair.decimals)
 
                 acc_amount_tokenA = await self.user.get_account_data(tokenA)
                 acc_amount_tokenB = await self.user.get_account_data(tokenB)
 
                 # Set Stop loss amount before creating sell order
-                stop_loss = round(self.buy_price * self.stop_loss_perc, token_decimals)
                 logs_args = (
-                    stop_loss,
                     price,
                     data,
                     pair,
@@ -187,22 +163,18 @@ class ScanMarket:
                 )
 
                 # Start new buy
-                if self.new_trade:
-                    await self.place_buy_order(
-                        price, pair, logs_args, token_decimals, amount
-                    )
+                if pair.new_trade:
+                    await self.place_buy_order(price, pair, logs_args)
                 else:
-                    await self.place_sell_order(
-                        pair, acc_amount_tokenB, logs_args, amount
-                    )
+                    await self.place_sell_order(pair, acc_amount_tokenB, logs_args)
 
                     # Check if filled and reset and start again if it is..
-                    is_filled = await self.check_filled(logs_args, amount)
+                    is_filled = await self.check_filled(pair, logs_args)
 
                     if not is_filled:
                         # Check price for stop loss - cancel, market sell and reset.
                         await self.check_stop_loss(
-                            price, pair, stop_loss, acc_amount_tokenA, logs_args, amount
+                            price, pair, acc_amount_tokenA, logs_args
                         )
 
     async def main(self):
