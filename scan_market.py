@@ -44,7 +44,7 @@ class ScanMarket:
 
         self.topic = f"/{market}/level{level}Depth{depth}"
         self.topic = f"/market/ticker"
-        all_pairs = pairs["all_pairs"]
+        self.all_pairs = pairs["all_pairs"]
         self.path = f"{self.topic}:{all_pairs}"
 
         self.pairs = pairs
