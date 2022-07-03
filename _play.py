@@ -38,5 +38,6 @@ print(avg_ask)
 print(avg_bid)
 
 import requests
-ip = requests.get('https://checkip.amazonaws.com').text.strip()
+
+ip = requests.get("https://checkip.amazonaws.com").text.strip()
 print(ip)
