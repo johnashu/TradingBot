@@ -88,10 +88,13 @@ class Pair:
         )
 
     def stop_loss_counter(self, reset=False):
-        if self.stop_loss_count > self.STOP_LOSS_MAX or reset:
+        if self.stop_loss_count > self.STOP_LOSS_MAX:
             self.stop_loss_count = 0
             return True
-        self.stop_loss_count += 1
+        elif reset:
+            self.stop_loss_count = 0
+        else:
+            self.stop_loss_count += 1
         return False
 
     def update_profit_loss(self, inc: bool = False, market_sell: float = -1) -> None:
@@ -107,8 +110,11 @@ class Pair:
     def update_reset_and_checks(
         self, inc=False, reset: bool = False, update_prices: bool = False
     ) -> bool:
+
         if update_prices:
             self.update_profit_loss(inc=inc)
-            return self.stop_loss_counter(reset=reset)
+        
+        res = self.stop_loss_counter(reset=reset)
         self.reset_data()
-        return False
+        
+        return res

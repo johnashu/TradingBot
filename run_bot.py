@@ -51,6 +51,7 @@ class RunBot(ScanMarket):
         reason="Stop Loss",
         update_prices=False,
         reset=False,
+        set_market_sell : bool = False
     ):
         # cancel_all_orders
         log.info(
@@ -61,7 +62,7 @@ class RunBot(ScanMarket):
 
         # Market sell if cancelled sell order
         # assign buy price to grab the correct P/L when sold.
-        if not update_prices:
+        if set_market_sell:
             pair.market_sell = True
             pair.market_sell_buy_price = pair.buy_price_usd
 
@@ -84,6 +85,7 @@ class RunBot(ScanMarket):
                 pair.sell_order_num,
                 logs_args,
                 update_prices=True,
+                set_market_sell=True
             )
 
     async def check_reset_buy(self, price, pair, acc_amount_tokenB, logs_args):
