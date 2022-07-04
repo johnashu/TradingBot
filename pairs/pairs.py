@@ -74,6 +74,7 @@ class Pair:
     def set_sell_prices(self, price: float) -> None:
         self.reset_price = round(self.mark_price * self.swing_perc_reset, self.decimals)
         self.sell_price = round(price * self.sell_perc, self.decimals)
+        self.sell_price_usd = round(self.sell_price * self.amount, self.decimals)
         self.stop_loss = round(price * self.stop_loss_perc, self.decimals)
         self.profit = round(
             (self.sell_price * self.amount) - (self.buy_price * self.amount),
