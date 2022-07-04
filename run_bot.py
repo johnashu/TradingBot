@@ -51,11 +51,11 @@ class RunBot(ScanMarket):
         reason="Stop Loss",
         update_prices=False,
         reset=False,
-        set_market_sell : bool = False
+        set_market_sell: bool = False,
     ):
         # cancel_all_orders
         log.info(
-            f"** {reason.upper()} **Cancelling OrderId {orders} for Pair {pair.name}"
+            f"** {reason.upper()} ** Cancelling OrderId {orders} for Pair {pair.name} @ ${pair.reset_price}"
         )
         cancelled = await self.trade.cancel_orders([orders])
         log.info(f"Orders Cancelled: {cancelled}")
@@ -85,7 +85,7 @@ class RunBot(ScanMarket):
                 pair.sell_order_num,
                 logs_args,
                 update_prices=True,
-                set_market_sell=True
+                set_market_sell=True,
             )
 
     async def check_reset_buy(self, price, pair, acc_amount_tokenB, logs_args):

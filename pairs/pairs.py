@@ -113,8 +113,8 @@ class Pair:
 
         if update_prices:
             self.update_profit_loss(inc=inc)
-        
+
         res = self.stop_loss_counter(reset=reset)
         self.reset_data()
-        
+
         return res
