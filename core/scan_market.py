@@ -48,27 +48,29 @@ class ScanMarket:
         spaces = "-" * 85
         log.info(spaces)
         log.info(
-            f"Pair {pair.name}  ::  SL ${pair.stop_loss}  ::  Price ${price}  ::  Buy ${pair.buy_price}  ::  Sell ${pair.sell_price}  ::  Mark ${pair.mark_price}  ::  Profit ${pair.profit}  ::  Loss  ${pair.loss_if_stopped}  ::  Reset ${pair.reset_price}"
+            f"Pair {pair.name}  ::   Price ${price}  ::  Buy ${pair.buy_price}  ::  Sell ${pair.sell_price}  ::  Mark ${pair.mark_price}  ::  Profit ${pair.profit}  ::  Loss  ${pair.loss_if_stopped}  ::  SL ${pair.stop_loss}  ::  Reset ${pair.reset_price}"
         )
         log.info(f"Current Profit / Loss = ${pair.profit_loss}")
 
-        log.info(
-            f'float(acc_amount_tokenA[0]["holds"]) == 0  ::  {float(acc_amount_tokenA[0]["holds"]) == 0}'
-        )
-
         log.info(f"acc_amount_tokenA: {acc_amount_tokenA}")
         log.info(f"acc_amount_tokenB: {acc_amount_tokenB}")
+
         log.info(pair.buy_sell)
 
         if self.verbose:
-            log.info(data)
             log.info(
                 f"""
-            {pair}:
+            Data: {data}
+            Pair: {pair}:
             Price: {price}
             Sell Price: {pair.sell_price}
             Volume: {volume}
-            
+
+            float(acc_amount_tokenA[0]["holds"]) == 0  ::  {float(acc_amount_tokenA[0]["holds"]) == 0}
+            price >= pair.reset_price ::  {price >= pair.reset_price}
+            float(acc_amount_tokenB[0]["holds"]) >= 1  :: {float(acc_amount_tokenB[0]["holds"]) >= 1}
+            price <= pair.stop_loss  ::  {price <= pair.stop_loss}
+            float(acc_amount_tokenA[0]["holds"]) > 0     ::  {float(acc_amount_tokenA[0]["holds"]) > 0}
             """
             )
         log.info(spaces)

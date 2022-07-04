@@ -14,6 +14,7 @@ class Pair:
     profit = 0
     loss_if_stopped = 0
     reset_price = 0
+    market_sell = False
 
     sell_order_num = 0
     buy_order_num = 0

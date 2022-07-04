@@ -16,7 +16,8 @@ class Trader:
     # place a market buy order   Use cautiously
     async def market_trade(self, pair: str, buy_sell: str, amount: str) -> str:
         order_id = self.client.create_market_order(pair, buy_sell, size=amount)
-        return order_id["orderId"]
+        print(order_id)
+        return order_id
 
     async def cancel_orders(self, order_ids: list) -> list:
         return [self.client.cancel_order(x) for x in order_ids]
