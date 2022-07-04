@@ -8,6 +8,7 @@ class RunBot(ScanMarket):
         pair.buy_order_num = await self.trade.limit_order(
             pair.name, "buy", str(pair.amount), buy_price
         )
+
         pair.set_buy_prices(buy_price)
         pair.set_sell_prices(buy_price)
         pair.new_trade = False
@@ -30,7 +31,7 @@ class RunBot(ScanMarket):
             pair.buy_sell = "sell"
             self.display_prices(*logs_args)
 
-    async def check_filled(self, pair, logs_args):
+    async def check_sell_order_filled(self, pair, logs_args):
 
         filled = await self.trade.is_filled(pair.sell_order_num, pair.amount)
         if filled:
@@ -38,12 +39,18 @@ class RunBot(ScanMarket):
                 f"LIMIT SELL Order Filled for {pair.amount} {pair.name} @ ${pair.sell_price} for ${pair.sell_price_usd}"
             )
             self.display_prices(*logs_args)
-            pair.update_reset_and_checks(inc=True, update_prices=True)
+            pair.update_reset_and_checks(inc=True, update_prices=True, reset=True)
             return True
         return False
 
     async def cancel_flow(
-        self, pair, orders, logs_args, reason="Stop Loss", update_prices=False
+        self,
+        pair,
+        orders,
+        logs_args,
+        reason="Stop Loss",
+        update_prices=False,
+        reset=False,
     ):
         # cancel_all_orders
         log.info(
@@ -61,7 +68,7 @@ class RunBot(ScanMarket):
         # Updates
         self.display_prices(*logs_args)
 
-        chillax = pair.update_reset_and_checks(update_prices=update_prices)
+        chillax = pair.update_reset_and_checks(update_prices=update_prices, reset=reset)
         if chillax:
             log.info(
                 f"Stop Loss occured [ {pair.stop_loss_count} ] times in a row.. Chilling for {pair.DELAY} Seconds.."
@@ -82,7 +89,7 @@ class RunBot(ScanMarket):
     async def check_reset_buy(self, price, pair, acc_amount_tokenB, logs_args):
         if price >= pair.reset_price and float(acc_amount_tokenB[0]["holds"]) >= 1:
             await self.cancel_flow(
-                pair, pair.buy_order_num, logs_args, reason="Reset Order"
+                pair, pair.buy_order_num, logs_args, reason="Reset Order", reset=True
             )
 
     async def check_market_sell(self, pair, acc_amount_tokenA):
@@ -139,7 +146,7 @@ class RunBot(ScanMarket):
             await self.place_sell_order(pair, acc_amount_tokenB, logs_args)
 
             # Check if filled and reset and start again if it is..
-            is_filled = await self.check_filled(pair, logs_args)
+            is_filled = await self.check_sell_order_filled(pair, logs_args)
 
             if not is_filled:
                 # Check price for stop loss - cancel, market sell and reset.

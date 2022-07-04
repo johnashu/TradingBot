@@ -87,8 +87,8 @@ class Pair:
             self.decimals,
         )
 
-    def stop_loss_counter(self):
-        if self.stop_loss_count > self.STOP_LOSS_MAX:
+    def stop_loss_counter(self, reset=False):
+        if self.stop_loss_count > self.STOP_LOSS_MAX or reset:
             self.stop_loss_count = 0
             return True
         self.stop_loss_count += 1
@@ -104,8 +104,11 @@ class Pair:
         else:
             self.profit_loss -= self.loss_if_stopped
 
-    def update_reset_and_checks(self, inc=False, update_prices: bool = False) -> bool:
+    def update_reset_and_checks(
+        self, inc=False, reset: bool = False, update_prices: bool = False
+    ) -> bool:
         if update_prices:
             self.update_profit_loss(inc=inc)
-            self.stop_loss_counter()
+            return self.stop_loss_counter(reset=reset)
         self.reset_data()
+        return False

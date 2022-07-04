@@ -76,11 +76,11 @@ class ScanMarket:
         topic = msg["topic"]
         log.info(topic)
         log.info(msg["data"])
-        for p in self.all_pairs.split(","):
-            if topic == f"{self.topic}:{p}":
-                data = msg["data"]
-                tokenA, tokenB = p.split("-")
-                await self.run_strategy(p, data, tokenA, tokenB)
+        # for p in self.all_pairs.split(","):
+        #     if topic == f"{self.topic}:{p}":
+        #         data = msg["data"]
+        #         tokenA, tokenB = p.split("-")
+        #         await self.run_strategy(p, data, tokenA, tokenB)
 
     async def run_strategy(self, *args):
         pass
@@ -109,8 +109,7 @@ if __name__ == "__main__":
         "ONE-USDT": Pair(**metadata["ONE"]),
         # "LUNC-USDT": Pair(**metadata['LUNC']),
     }
-    # pairs.update({"all_pairs": ",".join([k for k in pairs.keys()])})
-    # rb = ScanMarket(creds, pairs, level=2, depth=5, market="spotMarket")
-    # loop = asyncio.get_event_loop()
-    # loop.run_until_complete(rb.main(loop))
-    print(100 - 110)
+    pairs.update({"all_pairs": ",".join([k for k in pairs.keys()])})
+    rb = ScanMarket(creds, pairs, level=2, depth=5, market="spotMarket")
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(rb.main(loop))
