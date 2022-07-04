@@ -1,1 +1,1 @@
-# TradingBot
+# TradingBot for Kucoin

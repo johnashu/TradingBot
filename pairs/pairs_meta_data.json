@@ -5,7 +5,8 @@
         "amount": 10000,
         "sell_perc": 0.4,
         "stop_loss_perc": 0.2,
-        "swing_perc": 0.4
+        "swing_perc_buy": 0.4,
+        "swing_perc_reset":0.4
     },
     "LUNC": {
         "name": "LUNC-USDT",
@@ -13,6 +14,7 @@
         "amount": 700000,
         "sell_perc": 1,
         "stop_loss_perc": 0.5,
-        "swing_perc": 1
+        "swing_perc_buy": 1,
+        "swing_perc_reset":0.4
     }
 }

@@ -48,7 +48,7 @@ class ScanMarket:
         spaces = "-" * 85
         log.info(spaces)
         log.info(
-            f"Pair {pair.name}  ::  SL ${pair.stop_loss}  ::  Price ${price}  ::  Buy ${pair.buy_price}  ::  Sell ${pair.sell_price}  ::  Mark ${pair.mark_price}  ::  Profit ${pair.profit}  ::  Loss  ${pair.loss_if_stopped}"
+            f"Pair {pair.name}  ::  SL ${pair.stop_loss}  ::  Price ${price}  ::  Buy ${pair.buy_price}  ::  Sell ${pair.sell_price}  ::  Mark ${pair.mark_price}  ::  Profit ${pair.profit}  ::  Loss  ${pair.loss_if_stopped}  ::  Reset ${pair.reset_price}"
         )
         log.info(f"Current Profit / Loss = {pair.profit_loss}")
 
@@ -73,7 +73,8 @@ class ScanMarket:
             )
         log.info(spaces)
 
-    async def place_buy_order(self, buy_price, pair, logs_args):
+    async def place_buy_order(self, pair, logs_args):
+        buy_price = pair.calc_buy_price()
         log.info(f"Setting Buy Order of {pair.amount} @  ${buy_price}")
         pair.buy_order_num = await self.trade.limit_order(
             pair.name, "buy", str(pair.amount), buy_price
@@ -95,7 +96,7 @@ class ScanMarket:
                 pair.name, "sell", str(pair.amount), str(pair.sell_price)
             )
             log.info(
-                f"SELL Limit Order for {pair.amount} {pair.name} @ ${pair.sell_price} for ${pair.sell_price_usd}\n{pair.sell_order_num}"
+                f"SELL Limit Order Created for {pair.amount} {pair.name} @ ${pair.sell_price} for ${pair.sell_price_usd}\n{pair.sell_order_num}"
             )
             pair.buy_sell = "sell"
             self.display_prices(*logs_args)
@@ -104,35 +105,47 @@ class ScanMarket:
 
         filled = await self.trade.is_filled(pair.sell_order_num, pair.amount)
         if filled:
-            pair.update_profit_loss(inc=True)
-            pair.reset_data()
+            pair.update_reset_and_checks(inc=True)
             log.info(
                 f"LIMIT SELL Order Filled for {pair.amount} {pair.name} @ ${pair.sell_price} for ${pair.sell_price_usd}"
             )
             self.display_prices(*logs_args)
             return True
-
         return False
 
-    async def check_stop_loss(self, price, pair, acc_amount_tokenA, logs_args):
-        if price <= pair.stop_loss and float(acc_amount_tokenA[0]["holds"]) >= 1:
-            # cancel_all_orders
-            cancelled = await self.trade.cancel_all_orders(pair)
-            log.info(f"MARKET SELL Order Filled: {cancelled}")
-            wallet_amount = pair.amount  # float(acc_amount_tokenA[0]["available"])
-            market_sell = await self.trade.market_trade(
-                pair.name, "sell", wallet_amount
+    async def cancel_flow(
+        self, price, pair, acc_amount_tokenA, logs_args, do_not_update_prices=False
+    ):
+        # cancel_all_orders
+        cancelled = await self.trade.cancel_all_orders(pair)
+        log.info(f"MARKET SELL Order Filled: {cancelled}")
+        wallet_amount = pair.amount  # float(acc_amount_tokenA[0]["available"])
+        market_sell = await self.trade.market_trade(pair.name, "sell", wallet_amount)
+        log.info(f"SELL Order Filled for {wallet_amount} ONE\n{market_sell}")
+        self.display_prices(*logs_args)
+        chillax = pair.update_reset_and_checks(
+            do_not_update_prices=do_not_update_prices
+        )
+        if chillax:
+            log.info(
+                f"Stop Loss occured [ {pair.stop_loss_count} ] times in a row.. Chilling for {pair.DELAY} Seconds.."
             )
-            log.info(f"SELL Order Filled for {wallet_amount} ONE\n{market_sell}")
-            self.display_prices(*logs_args)
-            pair.update_profit_loss()
-            pair.reset_data()
-            chillax = pair.stop_loss_counter()
-            if chillax:
-                log.info(
-                    f"Stop Loss occured [ {pair.stop_loss_count} ] times in a row.. Chilling for {pair.DELAY} Seconds.."
-                )
-                await asyncio.sleep(pair.DELAY)
+            await asyncio.sleep(pair.DELAY)
+
+    async def check_stop_loss(self, price, pair, acc_amount_tokenA, logs_args):
+
+        if price <= pair.stop_loss and float(acc_amount_tokenA[0]["holds"]) >= 1:
+            self.cancel_flow(self, price, pair, acc_amount_tokenA, logs_args)
+
+        if price >= pair.reset_price:
+            self.cancel_flow(
+                self,
+                price,
+                pair,
+                acc_amount_tokenA,
+                logs_args,
+                do_not_update_prices=True,
+            )
 
     async def deal_msg(self, msg):
         topic = msg["topic"]
@@ -153,7 +166,7 @@ class ScanMarket:
                 acc_amount_tokenA = await self.user.get_account_data(tokenA)
                 acc_amount_tokenB = await self.user.get_account_data(tokenB)
 
-                # Set Stop loss amount before creating sell order
+                # Set arguments for logging.
                 logs_args = (
                     price,
                     data,
@@ -165,8 +178,7 @@ class ScanMarket:
 
                 # Start new buy
                 if pair.new_trade:
-                    new_buy_price = pair.calc_buy_price()
-                    await self.place_buy_order(new_buy_price, pair, logs_args)
+                    await self.place_buy_order(pair, logs_args)
                 else:
                     await self.place_sell_order(pair, acc_amount_tokenB, logs_args)
 

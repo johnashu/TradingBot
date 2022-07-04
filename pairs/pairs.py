@@ -13,13 +13,15 @@ class Pair:
     stop_loss = 0
     profit = 0
     loss_if_stopped = 0
+    reset_price = 0
 
     sell_order_num = 0
     buy_order_num = 0
 
     sell_perc = 0
     stop_loss_perc = 0
-    swing_perc = 0
+    swing_perc_buy = 0
+    swing_perc_reset = 0
 
     # Anti Dump flag.. If it dumps and we lose 3 x SL in a row, chill for a min!
     STOP_LOSS_MAX = 3
@@ -33,14 +35,16 @@ class Pair:
         amount: float = 0,
         sell_perc: float = 0,
         stop_loss_perc: float = 0,
-        swing_perc: float = 0,
+        swing_perc_buy: float = 0,
+        swing_perc_reset: float = 0,
     ) -> None:
         self.name = name
         self.decimals = decimals
         self.amount = amount
         self.sell_perc = sell_perc / 100 + 1
         self.stop_loss_perc = -stop_loss_perc / 100 + 1
-        self.swing_perc = swing_perc / -100 + 1
+        self.swing_perc_buy = swing_perc_buy / -100 + 1
+        self.swing_perc_reset = swing_perc_reset / 100 + 1
 
     def __str__(self):
         return self.name
@@ -60,7 +64,7 @@ class Pair:
         self.sell_price_usd = 0
 
     def calc_buy_price(self):
-        price = round(self.mark_price * self.swing_perc, self.decimals)
+        price = round(self.mark_price * self.swing_perc_buy, self.decimals)
         return price
 
     def set_buy_prices(self, price: float) -> None:
@@ -68,6 +72,7 @@ class Pair:
         self.buy_price = price
 
     def set_sell_prices(self, price: float) -> None:
+        self.reset_price = round(self.mark_price * self.swing_perc_reset, self.decimals)
         self.sell_price = round(price * self.sell_perc, self.decimals)
         self.stop_loss = round(price * self.stop_loss_perc, self.decimals)
         self.profit = round(
@@ -82,12 +87,21 @@ class Pair:
     def stop_loss_counter(self):
         if self.stop_loss_count > self.STOP_LOSS_MAX:
             self.stop_loss_count = 0
-            return False
+            return True
         self.stop_loss_count += 1
-        return True
+        return False
 
     def update_profit_loss(self, inc: bool = False) -> None:
         if inc:
             self.profit_loss += self.profit
         else:
             self.profit_loss -= self.loss_if_stopped
+
+    def update_reset_and_checks(
+        self, inc=False, do_not_update_prices: bool = False
+    ) -> bool:
+        self.reset_data()
+        if do_not_update_prices:
+            return False
+        self.update_profit_loss(inc=inc)
+        return self.stop_loss_counter()
