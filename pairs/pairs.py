@@ -1,7 +1,7 @@
 class Pair:
 
     profit_loss = 0
-    
+
     mark_price = None
     buy_sell = "buy"
     new_trade = True

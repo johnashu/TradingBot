@@ -38,7 +38,7 @@ class RunBot(ScanMarket):
                 f"LIMIT SELL Order Filled for {pair.amount} {pair.name} @ ${pair.sell_price} for ${pair.sell_price_usd}"
             )
             self.display_prices(*logs_args)
-            pair.update_reset_and_checks(inc=True)
+            pair.update_reset_and_checks(inc=True, update_prices=True)
             return True
         return False
 
@@ -91,12 +91,16 @@ class RunBot(ScanMarket):
             market_sell = await self.trade.market_trade(
                 pair.name, "sell", wallet_amount
             )
+
+            log.info(f"Market Sell orderId  ::  {market_sell}")
+
             sold_for = await self.trade.get_market_price_sold(market_sell)
 
-            pair.update_profit_loss(market_sell=sold_for)
             log.info(
                 f"MARKET SELL Order Filled for {wallet_amount} ONE  @ ${sold_for}::  orderId {market_sell}"
             )
+
+            pair.update_profit_loss(market_sell=sold_for)
             pair.market_sell = False
 
     async def run_strategy(self, p, data, tokenA, tokenB):

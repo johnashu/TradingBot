@@ -42,7 +42,7 @@ class Trader:
         return filled_amount == amount
 
     async def get_market_price_sold(self, orderId: str):
-        res, oid = self.view_order(orderId)
+        res, oid = await self.view_order(orderId)
         if res:
             funds = float(oid["dealFunds"])
             fee = float(oid["fee"])

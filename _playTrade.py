@@ -29,8 +29,7 @@ class Trader:
         try:
             return True, self.client.get_order_details(orderId)
         except Exception as e:
-            log.error(e)
-            return False, {}
+            return False, {"Error": e}
 
     def get_fill_list(self, orderId, tradeType="TRADE"):
         return self.client.get_fill_list(tradeType, **{"orderId": orderId})
@@ -38,7 +37,6 @@ class Trader:
     def is_filled(self, orderId: str, amount, tradeType="TRADE"):
         oid = self.get_fill_list(orderId, tradeType=tradeType)
         filled_amount = sum([float(x["size"]) for x in oid["items"]])
-        print(filled_amount)
         return filled_amount == amount
 
     def get_market_price_sold(self, orderId: str):
@@ -60,16 +58,18 @@ if __name__ == "__main__":
     price = "0.017"
 
     t = Trader(creds)
-    # m = t.market_trade(pair, "sell", "10000")
-    # print(m)
+    oid = t.market_trade(pair, "buy", "10")
+    print(oid)
+    oid = t.market_trade(pair, "sell", "10")
+    print(oid)
     # l = t.limit_order(pair, buy_sell, amount, price)
     # print(l)
     # c = t.cancel_all_orders(pair)
     # print(c)
 
-    oid = "62c307cb7c7ecc0001a78c70"
-    # # r = t.view_order(oid)
-    # # print(r)
+    # oid = "62c323ca069bc70001c91e02"
+    # # # r = t.view_order(oid)
+    # # # print(r)
 
     rf = t.get_market_price_sold(oid)
     print(rf)
