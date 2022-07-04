@@ -4,9 +4,9 @@ import websockets
 from datetime import datetime
 from kucoin.client import WsToken
 from kucoin.ws_client import KucoinWsClient
-from includes.config import *
-from includes.pairs import pairs
 
+from includes.config import *
+from pairs.pairs import Pair
 from core.trade import Trader
 from core.user import Account
 
@@ -48,8 +48,9 @@ class ScanMarket:
         spaces = "-" * 85
         log.info(spaces)
         log.info(
-            f"Pair {pair.name}  ::  SL ${pair.stop_loss}  ::  Price ${price}  ::  Buy ${pair.buy_price}  ::  Sell ${pair.sell_price}  ::  Mark ${pair.mark_price}"
+            f"Pair {pair.name}  ::  SL ${pair.stop_loss}  ::  Price ${price}  ::  Buy ${pair.buy_price}  ::  Sell ${pair.sell_price}  ::  Mark ${pair.mark_price}  ::  Profit ${pair.profit}  ::  Loss  ${pair.loss_if_stopped}"
         )
+        log.info(f"Current Profit / Loss = {pair.profit_loss}")
 
         log.info(
             f'float(acc_amount_tokenA[0]["holds"]) == 0  ::  {float(acc_amount_tokenA[0]["holds"]) == 0}'
@@ -72,52 +73,45 @@ class ScanMarket:
             )
         log.info(spaces)
 
-    def calc_buy_price(self, pair, current_price):
-        price = round(pair.mark_price * pair.swing_perc, pair.decimals)
-        log.info(
-            f"{pair.name}  ::  Price ${current_price}  ::  Buy in Price  ${price}  ::  Mark Price  ${pair.mark_price}"
+    async def place_buy_order(self, buy_price, pair, logs_args):
+        log.info(f"Setting Buy Order of {pair.amount} @  ${buy_price}")
+        pair.buy_order_num = await self.trade.limit_order(
+            pair.name, "buy", str(pair.amount), buy_price
         )
-        return price
-
-    async def place_buy_order(self, price, pair, logs_args):
-        if price <= self.calc_buy_price(pair, price):
-            log.info(f"Setting Buy Order: {price}")
-            self.display_prices(*logs_args)
-            pair.buy_order_num = await self.trade.limit_order(
-                pair.name, "buy", str(pair.amount), price
-            )
-            log.info(
-                f"SET BUY Limit Order for {pair.amount} {pair.name} @ ${price} for ${price * pair.amount}\n{pair.buy_order_num}"
-            )
-            pair.buy_price = price
-            pair.sell_price = round(price * pair.sell_perc, pair.decimals)
-            pair.new_trade = False
+        pair.set_buy_prices(buy_price)
+        pair.set_sell_prices(buy_price)
+        pair.new_trade = False
+        log.info(
+            f"SET BUY Limit Order for {pair.amount} {pair.name} @ ${buy_price} for ${pair.buy_price_usd}\n{pair.buy_order_num}"
+        )
+        self.display_prices(*logs_args)
 
     async def place_sell_order(self, pair, acc_amount_tokenB, logs_args):
         if acc_amount_tokenB[0]["holds"] == "0" and pair.buy_sell != "sell":
             log.info(
-                f"BUY Order Filled for {pair.amount} ONE @ ${pair.buy_price} for ${pair.buy_price * pair.amount}"
+                f"BUY Order Filled for {pair.amount} {pair.name} @ ${pair.buy_price} for ${pair.buy_price_usd}"
             )
-            self.display_prices(*logs_args)
             pair.sell_order_num = await self.trade.limit_order(
                 pair.name, "sell", str(pair.amount), str(pair.sell_price)
             )
             log.info(
-                f"SELL Limit Order for {pair.amount} ONE @ ${pair.sell_price} for ${pair.sell_price * pair.amount}\n{pair.sell_order_num}"
+                f"SELL Limit Order for {pair.amount} {pair.name} @ ${pair.sell_price} for ${pair.sell_price_usd}\n{pair.sell_order_num}"
             )
             pair.buy_sell = "sell"
-            pair.stop_loss = round(pair.buy_price * pair.stop_loss_perc, pair.decimals)
+            self.display_prices(*logs_args)
 
     async def check_filled(self, pair, logs_args):
 
         filled = await self.trade.is_filled(pair.sell_order_num, pair.amount)
         if filled:
-            self.reset_data()
+            pair.update_profit_loss(inc=True)
+            pair.reset_data()
             log.info(
-                f"LIMIT SELL Order Filled for {pair.amount} ONE @ ${pair.sell_price} for ${pair.sell_price * pair.amount}"
+                f"LIMIT SELL Order Filled for {pair.amount} {pair.name} @ ${pair.sell_price} for ${pair.sell_price_usd}"
             )
+            self.display_prices(*logs_args)
             return True
-        self.display_prices(*logs_args)
+
         return False
 
     async def check_stop_loss(self, price, pair, acc_amount_tokenA, logs_args):
@@ -125,13 +119,20 @@ class ScanMarket:
             # cancel_all_orders
             cancelled = await self.trade.cancel_all_orders(pair)
             log.info(f"MARKET SELL Order Filled: {cancelled}")
-            self.display_prices(*logs_args)
             wallet_amount = pair.amount  # float(acc_amount_tokenA[0]["available"])
             market_sell = await self.trade.market_trade(
                 pair.name, "sell", wallet_amount
             )
             log.info(f"SELL Order Filled for {wallet_amount} ONE\n{market_sell}")
-            self.reset_data()
+            self.display_prices(*logs_args)
+            pair.update_profit_loss()
+            pair.reset_data()
+            chillax = pair.stop_loss_counter()
+            if chillax:
+                log.info(
+                    f"Stop Loss occured [ {pair.stop_loss_count} ] times in a row.. Chilling for {pair.DELAY} Seconds.."
+                )
+                await asyncio.sleep(pair.DELAY)
 
     async def deal_msg(self, msg):
         topic = msg["topic"]
@@ -164,7 +165,8 @@ class ScanMarket:
 
                 # Start new buy
                 if pair.new_trade:
-                    await self.place_buy_order(price, pair, logs_args)
+                    new_buy_price = pair.calc_buy_price()
+                    await self.place_buy_order(new_buy_price, pair, logs_args)
                 else:
                     await self.place_sell_order(pair, acc_amount_tokenB, logs_args)
 
@@ -185,7 +187,6 @@ class ScanMarket:
 
         try:
             await ws_client.subscribe(self.path)
-            # await ws_client.subscribe(self.path)
         except websockets.exceptions.ConnectionClosedOK as e:
             log.error(e)
         while True:
@@ -193,6 +194,11 @@ class ScanMarket:
 
 
 if __name__ == "__main__":
+    pairs = {
+        "ONE-USDT": Pair(**metadata["ONE"]),
+        # "LUNC-USDT": Pair(**metadata['LUNC']),
+    }
+    pairs.update({"all_pairs": ",".join([k for k in pairs.keys()])})
     sm = ScanMarket(creds, pairs, level=2, depth=5, market="spotMarket")
     loop = asyncio.get_event_loop()
     loop.run_until_complete(sm.main())

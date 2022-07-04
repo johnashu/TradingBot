@@ -1,9 +1,15 @@
 from includes.setup._envs import Envs
 from includes.setup._logging import start_logger
-import includes.setup._paths
+from includes.setup._paths import *
+from tools.file_op import open_json
+import sys
+
+sys.dont_write_bytecode = True
+
+verbose = False
 
 envs = Envs()
-log = start_logger()
+log = start_logger(verbose=verbose)
 
 creds = dict(
     key=envs.spot_key,
@@ -12,6 +18,8 @@ creds = dict(
     is_sandbox=False,
     url="https://api.kucoin.com",
 )
+
+metadata = open_json(pairs_metadata_path)
 
 # key=envs.futures_key
 # secret=envs.futures_secret
