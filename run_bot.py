@@ -72,16 +72,17 @@ class RunBot(ScanMarket):
 
     async def check_stop_loss(self, price, pair, acc_amount_tokenA, logs_args):
         if price <= pair.stop_loss and float(acc_amount_tokenA[0]["holds"]) > 0:
-            await self.cancel_flow(pair, pair.sell_order_num, logs_args)
+            await self.cancel_flow(
+                pair,
+                pair.sell_order_num,
+                logs_args,
+                update_prices=True,
+            )
 
     async def check_reset_buy(self, price, pair, acc_amount_tokenB, logs_args):
         if price >= pair.reset_price and float(acc_amount_tokenB[0]["holds"]) >= 1:
             await self.cancel_flow(
-                pair,
-                pair.buy_order_num,
-                logs_args,
-                reason="Reset Order",
-                update_prices=True,
+                pair, pair.buy_order_num, logs_args, reason="Reset Order"
             )
 
     async def check_market_sell(self, pair, acc_amount_tokenA):
@@ -94,14 +95,16 @@ class RunBot(ScanMarket):
 
             log.info(f"Market Sell orderId  ::  {market_sell}")
 
-            sold_for = await self.trade.get_market_price_sold(market_sell)
+            sold_for = (
+                pair.market_sell_buy_price
+                - await self.trade.get_market_price_sold(market_sell)
+            )
 
             log.info(
                 f"MARKET SELL Order Filled for {wallet_amount} ONE  @ ${sold_for}::  orderId {market_sell}"
             )
 
             pair.update_profit_loss(market_sell=sold_for)
-            pair.market_sell = False
 
     async def run_strategy(self, p, data, tokenA, tokenB):
 

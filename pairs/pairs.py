@@ -98,6 +98,7 @@ class Pair:
         if market_sell != -1:
             self.profit_loss += market_sell
             self.market_sell_buy_price = 0
+            self.market_sell = False
         elif inc:
             self.profit_loss += self.profit
         else:
