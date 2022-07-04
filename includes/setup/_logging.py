@@ -6,7 +6,9 @@ def start_logger(verbose: bool = False) -> logging:
     ts = datetime.datetime.now()
     # LOGGING
     file_handler = logging.FileHandler(
-        filename=os.path.join("logs", f"{ts.day}-{ts.month}-{ts.year}.log")
+        filename=os.path.join(
+            "logs", f"{ts.day}-{ts.month}-{ts.year}_{ts.hour}_{ts.minute}.log"
+        )
     )
     stdout_handler = logging.StreamHandler(sys.stdout)
     handlers = [file_handler, stdout_handler]
