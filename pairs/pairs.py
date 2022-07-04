@@ -1,7 +1,7 @@
 class Pair:
 
     profit_loss = 0
-
+    
     mark_price = None
     buy_sell = "buy"
     new_trade = True
@@ -15,6 +15,7 @@ class Pair:
     loss_if_stopped = 0
     reset_price = 0
     market_sell = False
+    market_sell_buy_price = 0
 
     sell_order_num = 0
     buy_order_num = 0
@@ -93,17 +94,17 @@ class Pair:
         self.stop_loss_count += 1
         return False
 
-    def update_profit_loss(self, inc: bool = False) -> None:
-        if inc:
+    def update_profit_loss(self, inc: bool = False, market_sell: float = -1) -> None:
+        if market_sell != -1:
+            self.profit_loss += market_sell
+            self.market_sell_buy_price = 0
+        elif inc:
             self.profit_loss += self.profit
         else:
             self.profit_loss -= self.loss_if_stopped
 
-    def update_reset_and_checks(
-        self, inc=False, do_not_update_prices: bool = False
-    ) -> bool:
+    def update_reset_and_checks(self, inc=False, update_prices: bool = False) -> bool:
+        if update_prices:
+            self.update_profit_loss(inc=inc)
+            self.stop_loss_counter()
         self.reset_data()
-        if do_not_update_prices:
-            return False
-        self.update_profit_loss(inc=inc)
-        return self.stop_loss_counter()

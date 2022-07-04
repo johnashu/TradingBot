@@ -13,9 +13,10 @@ def start_logger(verbose: bool = False) -> logging:
     stdout_handler = logging.StreamHandler(sys.stdout)
     handlers = [file_handler, stdout_handler]
 
+    # <%(funcName)s>
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] <%(funcName)s> %(message)s",
+        format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=handlers,
         datefmt="%d-%m-%Y %H:%M:%S",
     )

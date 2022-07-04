@@ -3,6 +3,9 @@ from kucoin.client import Trade
 
 
 class Trader:
+
+    feeRate = 0.001
+
     def __init__(self, creds) -> None:
         self.client = Trade(**creds)
 
@@ -38,6 +41,15 @@ class Trader:
         print(filled_amount)
         return filled_amount == amount
 
+    def get_market_price_sold(self, orderId: str):
+        res, oid = self.view_order(orderId)
+        if res:
+            funds = float(oid["dealFunds"])
+            fee = float(oid["fee"])
+            total = funds - fee
+            return total
+        return 0
+
 
 if __name__ == "__main__":
     from includes.config import *
@@ -48,18 +60,21 @@ if __name__ == "__main__":
     price = "0.017"
 
     t = Trader(creds)
-    m = t.market_trade(pair, "sell", "10000")
-    print(m)
+    # m = t.market_trade(pair, "sell", "10000")
+    # print(m)
     # l = t.limit_order(pair, buy_sell, amount, price)
     # print(l)
     # c = t.cancel_all_orders(pair)
     # print(c)
 
-    # oid = "62c107b9e122f8000101dba9"
+    oid = "62c307cb7c7ecc0001a78c70"
     # # r = t.view_order(oid)
     # # print(r)
 
-    # rf = t.get_fill_list(oid)
-    # print(rf)
+    rf = t.get_market_price_sold(oid)
+    print(rf)
+
+    # vo = t.view_order(oid)
+    # print(vo)
 
     # print(t.is_filled(oid, 5000))

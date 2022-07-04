@@ -25,7 +25,6 @@ class ScanMarket:
         # private
         self.client = WsToken(**creds)
 
-        # TODO: Move to strategy logic class
         self.trade = Trader(creds)
         self.user = Account(creds)
 
@@ -52,17 +51,13 @@ class ScanMarket:
         )
         log.info(f"Current Profit / Loss = ${pair.profit_loss}")
 
-        log.info(f"acc_amount_tokenA: {acc_amount_tokenA}")
-        log.info(f"acc_amount_tokenB: {acc_amount_tokenB}")
-
-        log.info(pair.buy_sell)
-
         if self.verbose:
             log.info(
                 f"""
             Data: {data}
             Pair: {pair}:
             Price: {price}
+            Buy / Sell: {pair.buy_sell}
             Sell Price: {pair.sell_price}
             Volume: {volume}
 
@@ -71,6 +66,8 @@ class ScanMarket:
             float(acc_amount_tokenB[0]["holds"]) >= 1  :: {float(acc_amount_tokenB[0]["holds"]) >= 1}
             price <= pair.stop_loss  ::  {price <= pair.stop_loss}
             float(acc_amount_tokenA[0]["holds"]) > 0     ::  {float(acc_amount_tokenA[0]["holds"]) > 0}
+            acc_amount_tokenA: {acc_amount_tokenA}
+            acc_amount_tokenB: {acc_amount_tokenB}
             """
             )
         log.info(spaces)
@@ -91,7 +88,9 @@ class ScanMarket:
         ws_client = await KucoinWsClient.create(
             None, self.client, self.deal_msg, private=False
         )
-
+        # https://docs.kucoin.com/#private-channels
+        # Topic: /spotMarket/tradeOrders
+        # This topic will push all change events of your orders.
         try:
             await ws_client.subscribe(self.path)
         except websockets.exceptions.ConnectionClosedOK as e:

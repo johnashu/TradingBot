@@ -3,6 +3,9 @@ from kucoin.client import Trade
 
 
 class Trader:
+
+    feeRate = 0.001
+
     def __init__(self, creds) -> None:
         self.client = Trade(**creds)
 
@@ -16,8 +19,7 @@ class Trader:
     # place a market buy order   Use cautiously
     async def market_trade(self, pair: str, buy_sell: str, amount: str) -> str:
         order_id = self.client.create_market_order(pair, buy_sell, size=amount)
-        print(order_id)
-        return order_id
+        return order_id["orderId"]
 
     async def cancel_orders(self, order_ids: list) -> list:
         return [self.client.cancel_order(x) for x in order_ids]
@@ -38,3 +40,12 @@ class Trader:
         oid = await self.get_fill_list(orderId, tradeType=tradeType)
         filled_amount = sum([float(x["size"]) for x in oid["items"]])
         return filled_amount == amount
+
+    async def get_market_price_sold(self, orderId: str):
+        res, oid = self.view_order(orderId)
+        if res:
+            funds = float(oid["dealFunds"])
+            fee = float(oid["fee"])
+            total = funds - fee
+            return total
+        return 0

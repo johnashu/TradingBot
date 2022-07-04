@@ -43,7 +43,7 @@ class RunBot(ScanMarket):
         return False
 
     async def cancel_flow(
-        self, pair, orders, logs_args, reason="Stop Loss", do_not_update_prices=False
+        self, pair, orders, logs_args, reason="Stop Loss", update_prices=False
     ):
         # cancel_all_orders
         log.info(
@@ -53,19 +53,18 @@ class RunBot(ScanMarket):
         log.info(f"Orders Cancelled: {cancelled}")
 
         # Market sell if cancelled sell order
-        # TODO: Update profit and Loss
-        if not do_not_update_prices:
+        # assign buy price to grab the correct P/L when sold.
+        if not update_prices:
             pair.market_sell = True
+            pair.market_sell_buy_price = pair.buy_price_usd
 
         # Updates
         self.display_prices(*logs_args)
-        slc = pair.stop_loss_count
-        chillax = pair.update_reset_and_checks(
-            do_not_update_prices=do_not_update_prices
-        )
+
+        chillax = pair.update_reset_and_checks(update_prices=update_prices)
         if chillax:
             log.info(
-                f"Stop Loss occured [ {slc} ] times in a row.. Chilling for {pair.DELAY} Seconds.."
+                f"Stop Loss occured [ {pair.stop_loss_count} ] times in a row.. Chilling for {pair.DELAY} Seconds.."
             )
             await asyncio.sleep(pair.DELAY)
         else:
@@ -82,7 +81,7 @@ class RunBot(ScanMarket):
                 pair.buy_order_num,
                 logs_args,
                 reason="Reset Order",
-                do_not_update_prices=True,
+                update_prices=True,
             )
 
     async def check_market_sell(self, pair, acc_amount_tokenA):
@@ -92,8 +91,11 @@ class RunBot(ScanMarket):
             market_sell = await self.trade.market_trade(
                 pair.name, "sell", wallet_amount
             )
+            sold_for = await self.trade.get_market_price_sold(market_sell)
+
+            pair.update_profit_loss(market_sell=sold_for)
             log.info(
-                f"MARKET SELL Order Filled for {wallet_amount} ONE  ::  orderId {market_sell}"
+                f"MARKET SELL Order Filled for {wallet_amount} ONE  @ ${sold_for}::  orderId {market_sell}"
             )
             pair.market_sell = False
 

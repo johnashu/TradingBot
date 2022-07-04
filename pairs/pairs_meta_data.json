@@ -3,10 +3,10 @@
         "name": "ONE-USDT",
         "decimals": 6,
         "amount": 10000,
-        "sell_perc": 0.2,
-        "stop_loss_perc": 0.1,
-        "swing_perc_buy": 0.2,
-        "swing_perc_reset":0.1
+        "sell_perc": 0.4,
+        "stop_loss_perc": 0.2,
+        "swing_perc_buy": 0.4,
+        "swing_perc_reset":0.2
     },
     "LUNC": {
         "name": "LUNC-USDT",
