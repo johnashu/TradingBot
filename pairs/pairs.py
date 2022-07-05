@@ -31,7 +31,7 @@ class Pair:
 
     # Anti Dump flag.. If it dumps and we lose 3 x SL in a row, chill for a min!
     STOP_LOSS_MAX = 3
-    DELAY = 60
+    DELAY = 600
     stop_loss_count = 0
 
     def __init__(
