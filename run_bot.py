@@ -89,7 +89,7 @@ class RunBot(ScanMarket):
     async def check_market_sell(self, pair, acc_amount_tokenA):
         if pair.market_sell:
             wallet_amount = round(
-                float(acc_amount_tokenA[0]["available"]), pair.decimals
+                float(acc_amount_tokenA[0]["available"]), pair.market_sell_decimals
             )
             log.info(f"Attempting Market Sell of {wallet_amount} {pair.name}")
             oid = await self.trade.market_trade(pair.name, "sell", str(wallet_amount))

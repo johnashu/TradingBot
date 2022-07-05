@@ -43,6 +43,7 @@ class Pair:
         stop_loss_perc: float = 0,
         swing_perc_buy: float = 0,
         swing_perc_reset: float = 0,
+        market_sell_decimals: int = 4,
     ) -> None:
         self.name = name
         self.decimals = decimals
@@ -51,6 +52,7 @@ class Pair:
         self.stop_loss_perc = -stop_loss_perc / 100 + 1
         self.swing_perc_buy = swing_perc_buy / -100 + 1
         self.swing_perc_reset = swing_perc_reset / 100 + 1
+        self.market_sell_decimals = market_sell_decimals
 
     def __str__(self):
         return self.name

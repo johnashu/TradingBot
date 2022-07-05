@@ -60,7 +60,7 @@ if __name__ == "__main__":
     t = Trader(creds)
     # oid = t.market_trade(pair, "buy", "10")
     # print(oid)
-    oid = t.market_trade(pair, "sell", "10.00002645")
+    oid = t.market_trade(pair, "sell", "10000.0000")
     print(oid)
     # l = t.limit_order(pair, buy_sell, amount, price)
     # print(l)
