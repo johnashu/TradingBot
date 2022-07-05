@@ -1,5 +1,7 @@
 # Trade
 from kucoin.client import Trade
+from includes.config import *
+from tools.utils import round_down
 
 
 class Trader:
@@ -50,7 +52,6 @@ class Trader:
 
 
 if __name__ == "__main__":
-    from includes.config import *
 
     pair = "ONE-USDT"
     buy_sell = "buy"
@@ -58,9 +59,9 @@ if __name__ == "__main__":
     price = "0.017"
 
     t = Trader(creds)
-    # oid = t.market_trade(pair, "buy", "10")
+    oid = t.market_trade(pair, "buy", round_down("10.000061233213", 4))
     # print(oid)
-    oid = t.market_trade(pair, "sell", "10000.0000")
+    oid = t.market_trade(pair, "sell", round_down("10.000061233213", 4))
     print(oid)
     # l = t.limit_order(pair, buy_sell, amount, price)
     # print(l)

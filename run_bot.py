@@ -1,4 +1,5 @@
 from core.scan_market import *
+from tools.utils import round_down
 
 
 class RunBot(ScanMarket):
@@ -73,7 +74,7 @@ class RunBot(ScanMarket):
 
     async def check_stop_loss(self, price, pair, logs_args):
         if price <= pair.stop_loss and not pair.sell_filled:
-            # Market sell if cancelled sell order
+            # MARKET SELL if cancelled sell order
             # assign buy price to grab the correct P/L when sold.
             pair.market_sell = True
             await self.cancel_flow(
@@ -88,13 +89,13 @@ class RunBot(ScanMarket):
 
     async def check_market_sell(self, pair, acc_amount_tokenA):
         if pair.market_sell:
-            wallet_amount = round(
-                float(acc_amount_tokenA[0]["available"]), pair.market_sell_decimals
+            wallet_amount = round_down(
+                acc_amount_tokenA[0]["available"], pair.market_sell_decimals
             )
-            log.info(f"Attempting Market Sell of {wallet_amount} {pair.name}")
+            log.info(f"Attempting MARKET SELL of {wallet_amount} {pair.name}")
             oid = await self.trade.market_trade(pair.name, "sell", str(wallet_amount))
 
-            log.info(f"Market Sell orderId  ::  {oid}")
+            log.info(f"MARKET SELL orderId  ::  {oid}")
 
             sold_for = await self.trade.get_market_price_sold(oid)
             pl = pair.market_sell_buy_price - sold_for
@@ -103,7 +104,7 @@ class RunBot(ScanMarket):
             )
 
             pair.update_profit_loss(market_sell=sold_for)
-            log.info("MArket Sell complete.. Restarting Cycle..")
+            log.info("MARKET SELL complete.. Restarting Cycle..")
 
     async def run_strategy(self, pair, data, tokenA, tokenB):
 
@@ -126,7 +127,7 @@ class RunBot(ScanMarket):
             acc_amount_tokenB,
         )
 
-        # check if any market sells required
+        # check if any MARKET SELLs required
         await self.check_market_sell(pair, acc_amount_tokenA)
 
         # Start new buy
@@ -139,7 +140,7 @@ class RunBot(ScanMarket):
             is_filled = await self.check_sell_order_filled(pair, logs_args)
 
             if not is_filled:
-                # Check price for stop loss - cancel, market sell and reset.
+                # Check price for stop loss - cancel, MARKET SELL and reset.
                 await self.check_stop_loss(price, pair, logs_args)
 
                 # check if price has gone up and is a buy
