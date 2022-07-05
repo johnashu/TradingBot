@@ -31,28 +31,30 @@ class Pair:
 
     # Anti Dump flag.. If it dumps and we lose 3 x SL in a row, chill for a min!
     STOP_LOSS_MAX = 3
-    DELAY = 600
     stop_loss_count = 0
+    DELAY = 600
 
     def __init__(
         self,
         name: str = "",
-        decimals: int = 0,
+        price_decimals: int = 0,
         amount: float = 0,
+        dollar_base_amount: float = 0,
         sell_perc: float = 0,
         stop_loss_perc: float = 0,
         swing_perc_buy: float = 0,
         swing_perc_reset: float = 0,
-        market_sell_decimals: int = 4,
+        token_amount_decimals: int = 4,
     ) -> None:
         self.name = name
-        self.decimals = decimals
+        self.price_decimals = price_decimals
         self.amount = amount
+        self.dollar_base_amount = dollar_base_amount
         self.sell_perc = sell_perc / 100 + 1
         self.stop_loss_perc = -stop_loss_perc / 100 + 1
         self.swing_perc_buy = swing_perc_buy / -100 + 1
         self.swing_perc_reset = swing_perc_reset / 100 + 1
-        self.market_sell_decimals = market_sell_decimals
+        self.token_amount_decimals = token_amount_decimals
 
     def __str__(self):
         return self.name
@@ -77,27 +79,29 @@ class Pair:
         self.loss_if_stopped = 0
         self.buy_price_usd = 0
 
-    def calc_buy_price(self):
-        price = round(self.mark_price * self.swing_perc_buy, self.decimals)
+    def calc_buy_price(self) -> float:
+        price = round(self.mark_price * self.swing_perc_buy, self.price_decimals)
         return price
 
     def set_buy_prices(self, price: float) -> None:
-        self.buy_price_usd = round(price * self.amount, self.decimals)
         self.buy_price = price
-        self.market_sell_buy_price = round(price * self.amount, self.decimals)
+        self.buy_price_usd = round(price * self.amount, self.price_decimals)
+        self.market_sell_buy_price = round(price * self.amount, self.price_decimals)
 
     def set_sell_prices(self, price: float) -> None:
-        self.reset_price = round(self.mark_price * self.swing_perc_reset, self.decimals)
-        self.sell_price = round(price * self.sell_perc, self.decimals)
-        self.sell_price_usd = round(self.sell_price * self.amount, self.decimals)
-        self.stop_loss = round(price * self.stop_loss_perc, self.decimals)
+        self.reset_price = round(
+            self.mark_price * self.swing_perc_reset, self.price_decimals
+        )
+        self.sell_price = round(price * self.sell_perc, self.price_decimals)
+        self.sell_price_usd = round(self.sell_price * self.amount, self.price_decimals)
+        self.stop_loss = round(price * self.stop_loss_perc, self.price_decimals)
         self.profit = round(
             (self.sell_price * self.amount) - (self.buy_price * self.amount),
-            self.decimals,
+            self.price_decimals,
         )
         self.loss_if_stopped = round(
             (self.buy_price * self.amount) - (self.stop_loss * self.amount),
-            self.decimals,
+            self.price_decimals,
         )
 
     def stop_loss_counter(self, reset=False):

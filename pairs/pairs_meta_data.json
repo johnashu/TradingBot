@@ -1,22 +1,23 @@
 {
     "ONE": {
         "name": "ONE-USDT",
-        "decimals": 6,
-        "amount": 10000,
+        "price_decimals": 6,
+        "token_amount_decimals": 2,
+        "dollar_base_amount": 180,
         "sell_perc": 1,
         "stop_loss_perc": 0.25,
         "swing_perc_buy": 1,
-        "swing_perc_reset":0.25,
-        "market_sell_decimals": 4
+        "swing_perc_reset":0.25
+        
     },
     "LUNC": {
         "name": "LUNC-USDT",
-        "decimals": 8,
-        "amount": 700000,
+        "price_decimals": 8,
+        "token_amount_decimals": 4,
+        "dollar_base_amount": 100,
         "sell_perc": 1,
         "stop_loss_perc": 0.5,
         "swing_perc_buy": 1,
-        "swing_perc_reset":0.4,
-        "market_sell_decimals": 4
+        "swing_perc_reset":0.4
     }
 }

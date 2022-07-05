@@ -1,10 +1,24 @@
+from matplotlib.style import available
 from core.scan_market import *
-from tools.utils import round_down
+from tools.utils import round_down, calc_price_from_amount
 
 
 class RunBot(ScanMarket):
-    async def place_buy_order(self, pair: Pair, logs_args: tuple) -> None:
+    async def place_buy_order(
+        self, pair: Pair, acc_amount_tokenB: list, logs_args: tuple
+    ) -> None:
+
+        available = acc_amount_tokenB[0]["available"]
+
+        log.info(f"available  :: ${available}")
+
         buy_price = pair.calc_buy_price()
+        pair.amount = calc_price_from_amount(
+            available, pair.dollar_base_amount, buy_price, 2
+        )
+
+        log.info(pair.amount)
+
         log.info(f"Setting Buy Order of {pair.amount} @  ${buy_price}")
         pair.buy_order_num = await self.trade.limit_order(
             pair.name, "buy", str(pair.amount), buy_price
@@ -90,7 +104,7 @@ class RunBot(ScanMarket):
     async def check_market_sell(self, pair: Pair, acc_amount_tokenA: list) -> None:
         if pair.market_sell:
             wallet_amount = round_down(
-                acc_amount_tokenA[0]["available"], pair.market_sell_decimals
+                acc_amount_tokenA[0]["available"], pair.token_amount_decimals
             )
             log.info(f"Attempting MARKET SELL of {wallet_amount} {pair.name}")
             oid = await self.trade.market_trade(pair.name, "sell", str(wallet_amount))
@@ -114,7 +128,7 @@ class RunBot(ScanMarket):
         volume = float(data["bestAskSize"])
 
         if not pair.mark_price:
-            pair.mark_price = round(price, pair.decimals)
+            pair.mark_price = round(price, pair.price_decimals)
 
         acc_amount_tokenA = await self.user.get_account_data(tokenA)
         acc_amount_tokenB = await self.user.get_account_data(tokenB)
@@ -134,7 +148,7 @@ class RunBot(ScanMarket):
 
         # Start new buy
         if pair.new_trade:
-            await self.place_buy_order(pair, logs_args)
+            await self.place_buy_order(pair, acc_amount_tokenB, logs_args)
         else:
             await self.place_sell_order(pair, logs_args)
 
