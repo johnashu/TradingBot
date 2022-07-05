@@ -1,4 +1,4 @@
-d = {
+{
         "currentPage": 1,
         "pageSize": 50,
         "totalNum": 2,
@@ -11,7 +11,7 @@ d = {
                 "counterOrderId": "62c2f0df9fbda50001fb6cd4",
                 "side": "sell",
                 "liquidity": "taker",
-                "forceTaker": True,
+                "forceTaker": true,
                 "price": "0.017485",
                 "size": "8929.641",
                 "funds": "156.134772885",
@@ -21,7 +21,7 @@ d = {
                 "stop": "",
                 "tradeType": "TRADE",
                 "type": "market",
-                "createdAt": 1656942862000,
+                "createdAt": 1656942862000
             },
             {
                 "symbol": "ONE-USDT",
@@ -30,7 +30,7 @@ d = {
                 "counterOrderId": "62c2f0ed9fbda50001fb8f6a",
                 "side": "sell",
                 "liquidity": "taker",
-                "forceTaker": True,
+                "forceTaker": true,
                 "price": "0.017497",
                 "size": "1070.359",
                 "funds": "18.728071423",
@@ -40,7 +40,7 @@ d = {
                 "stop": "",
                 "tradeType": "TRADE",
                 "type": "market",
-                "createdAt": 1656942862000,
+                "createdAt": 1656942862000
             },
         ],
     }

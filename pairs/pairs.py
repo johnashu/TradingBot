@@ -8,17 +8,21 @@ class Pair:
 
     buy_price = 0
     buy_price_usd = 0
+    buy_order_num = 0
+    buy_filled = False
+
     sell_price = 0
     sell_price_usd = 0
+    sell_order_num = 0
+    sell_filled = False
+
     stop_loss = 0
     profit = 0
     loss_if_stopped = 0
     reset_price = 0
+
     market_sell = False
     market_sell_buy_price = 0
-
-    sell_order_num = 0
-    buy_order_num = 0
 
     sell_perc = 0
     stop_loss_perc = 0
@@ -55,15 +59,21 @@ class Pair:
         self.buy_sell = "buy"
         self.new_trade = True
         self.mark_price = None
+
         self.buy_price = 0
+        self.buy_order_num = 0
+        self.buy_price_usd = 0
+        self.buy_filled = False
+
         self.sell_price = 0
         self.sell_order_num = 0
-        self.buy_order_num = 0
+        self.sell_price_usd = 0
+        self.sell_filled = False
+
         self.stop_loss = 0
         self.profit = 0
         self.loss_if_stopped = 0
         self.buy_price_usd = 0
-        self.sell_price_usd = 0
 
     def calc_buy_price(self):
         price = round(self.mark_price * self.swing_perc_buy, self.decimals)
@@ -72,6 +82,7 @@ class Pair:
     def set_buy_prices(self, price: float) -> None:
         self.buy_price_usd = round(price * self.amount, self.decimals)
         self.buy_price = price
+        self.market_sell_buy_price = round(price * self.amount, self.decimals)
 
     def set_sell_prices(self, price: float) -> None:
         self.reset_price = round(self.mark_price * self.swing_perc_reset, self.decimals)

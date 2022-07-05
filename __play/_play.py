@@ -20,9 +20,11 @@ class ScanMarket:
         depth: int = 5,
         market: str = "spotMarket",
         verbose: bool = False,
+        private=False
     ) -> None:
         self.verbose = verbose
         # private
+        self.private = private
         self.client = WsToken(**creds)
 
         self.trade = Trader(creds)
@@ -76,6 +78,8 @@ class ScanMarket:
         topic = msg["topic"]
         log.info(topic)
         log.info(msg["data"])
+        if topic == "/spotMarket/tradeOrders":
+            log.info('TOPIC FOUND!!')
         # for p in self.all_pairs.split(","):
         #     if topic == f"{self.topic}:{p}":
         #         data = msg["data"]
@@ -88,7 +92,7 @@ class ScanMarket:
     async def main(self, loop):
 
         ws_client = await KucoinWsClient.create(
-            None, self.client, self.deal_msg, private=False
+            None, self.client, self.deal_msg, private=self.private
         )
         # https://docs.kucoin.com/#private-channels
         # Topic: /spotMarket/tradeOrders
@@ -109,7 +113,19 @@ if __name__ == "__main__":
         "ONE-USDT": Pair(**metadata["ONE"]),
         # "LUNC-USDT": Pair(**metadata['LUNC']),
     }
+    private = True
     pairs.update({"all_pairs": ",".join([k for k in pairs.keys()])})
-    rb = ScanMarket(creds, pairs, level=2, depth=5, market="spotMarket")
+    rb = ScanMarket(creds, pairs, level=2, depth=5, market="spotMarket", private=private)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(rb.main(loop))
+
+
+place = {'symbol': 'ONE-USDT', 'orderType': 'limit', 'side': 'buy', 'orderId': '62c3e6112367290001cec6e9', 'liquidity': 'taker', 'type': 'match', 'orderTime': 1657005585711758431, 'size': '10', 'filledSize': '10', 'price': '0.018765', 'matchPrice': '0.018765', 'matchSize': '10', 'tradeId': '62c3e6114f42a85380e12e3e', 'remainSize': '0', 'status': 'match', 'ts': 1657005585711758431}
+
+filled = {'symbol': 'ONE-USDT', 'orderType': 'limit', 'side': 'buy', 'orderId': '62c3e6112367290001cec6e9', 'type': 'filled', 'orderTime': 1657005585711758431, 'size': '10', 'filledSize': '10', 'price': '0.018765', 'remainSize': '0', 'status': 'done', 'ts': 1657005585711758431}
+
+placed_sell = {'symbol': 'ONE-USDT', 'orderType': 'limit', 'side': 'sell', 'orderId': '62c3e664e122f80001b6f7fa', 'type': 'open', 'orderTime': 1657005668598686531, 'size': '10', 'filledSize': '0', 'price': '0.018763', 'remainSize': '10', 'status': 'open', 'ts': 1657005668598686531}
+
+cancelled = {'symbol': 'ONE-USDT', 'orderType': 'limit', 'side': 'sell', 'orderId': '62c3e664e122f80001b6f7fa', 'type': 'canceled', 'orderTime': 1657005668598686531, 'size': '10', 'filledSize': '0', 'price': '0.018763', 'remainSize': '0', 'status': 'done', 'ts': 1657005744728667664}
+
+filled_sell = 
