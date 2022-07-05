@@ -58,9 +58,9 @@ if __name__ == "__main__":
     price = "0.017"
 
     t = Trader(creds)
-    oid = t.market_trade(pair, "buy", "10")
-    print(oid)
-    oid = t.market_trade(pair, "sell", "10")
+    # oid = t.market_trade(pair, "buy", "10")
+    # print(oid)
+    oid = t.market_trade(pair, "sell", "10.00002645")
     print(oid)
     # l = t.limit_order(pair, buy_sell, amount, price)
     # print(l)

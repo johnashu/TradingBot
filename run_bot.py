@@ -39,6 +39,7 @@ class RunBot(ScanMarket):
             )
             self.display_prices(*logs_args)
             pair.update_reset_and_checks(inc=True, update_prices=True, reset=True)
+            log.info("Sell Complete.. Restarting Cycle..")
             return True
         return False
 
@@ -68,7 +69,7 @@ class RunBot(ScanMarket):
             )
             await asyncio.sleep(pair.DELAY)
         else:
-            log.info("Restarting Cycle..")
+            log.info("Cancel Complete.. Restarting Cycle..")
 
     async def check_stop_loss(self, price, pair, logs_args):
         if price <= pair.stop_loss and not pair.sell_filled:
@@ -87,21 +88,22 @@ class RunBot(ScanMarket):
 
     async def check_market_sell(self, pair, acc_amount_tokenA):
         if pair.market_sell:
-            wallet_amount = float(acc_amount_tokenA[0]["available"])
-            log.info(f"Attempting Market Sell of {wallet_amount} {pair.name}")
-            market_sell = await self.trade.market_trade(
-                pair.name, "sell", wallet_amount
+            wallet_amount = round(
+                float(acc_amount_tokenA[0]["available"]), pair.decimals
             )
+            log.info(f"Attempting Market Sell of {wallet_amount} {pair.name}")
+            oid = await self.trade.market_trade(pair.name, "sell", str(wallet_amount))
 
-            log.info(f"Market Sell orderId  ::  {market_sell}")
+            log.info(f"Market Sell orderId  ::  {oid}")
 
-            sold_for = await self.trade.get_market_price_sold(market_sell)
+            sold_for = await self.trade.get_market_price_sold(oid)
             pl = pair.market_sell_buy_price - sold_for
             log.info(
-                f"MARKET SELL Order Filled for {wallet_amount} ONE  @ ${sold_for}  ::  orderId {market_sell}  ::  P/L {pl}"
+                f"MARKET SELL Order Filled for {wallet_amount} ONE  @ ${sold_for}  ::  orderId {oid}  ::  P/L {pl}"
             )
 
             pair.update_profit_loss(market_sell=sold_for)
+            log.info("MArket Sell complete.. Restarting Cycle..")
 
     async def run_strategy(self, pair, data, tokenA, tokenB):
 
