@@ -1,7 +1,7 @@
 from decimal import Decimal, ROUND_DOWN
 
 
-def round_down(amount, decimals):
+def round_down(amount: str, decimals: int) -> float:
     places = "." + "".join(["0" for _ in range(decimals)])
     rounded = Decimal(amount).quantize(Decimal(places), rounding=ROUND_DOWN)
     return float(rounded)
@@ -17,7 +17,7 @@ def create_averages(arr: list, ts: int) -> dict:
     return rtn
 
 
-def readable_price(num, d: int = 18, show_decimals=True, print_res=True):
+def readable_price(num, d: int = 18, show_decimals=True, print_res=True) -> str:
     temp = []
     c = 1
     try:

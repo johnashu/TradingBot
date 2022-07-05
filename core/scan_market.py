@@ -41,13 +41,13 @@ class ScanMarket:
 
     def display_prices(
         self,
-        price,
-        data,
-        pair,
-        volume,
-        acc_amount_tokenA,
-        acc_amount_tokenB,
-    ):
+        price: float,
+        data: dict,
+        pair: Pair,
+        volume: float,
+        acc_amount_tokenA: list,
+        acc_amount_tokenB: list,
+    ) -> None:
         spaces = "-" * 85
         log.info(spaces)
         log.info(
@@ -76,7 +76,7 @@ class ScanMarket:
             )
         log.info(spaces)
 
-    async def deal_msg(self, msg):
+    async def deal_msg(self, msg: dict) -> None:
         topic = msg["topic"]
         for p in self.all_pairs.split(","):
             pair = self.pairs[p]
@@ -87,13 +87,13 @@ class ScanMarket:
             if topic == self.private_trade_topic:
                 await self.update_pair_status(p, pair, data)
 
-    async def run_strategy(self, *args):
+    async def run_strategy(self, *args) -> None:
         pass
 
-    async def update_pair_status(self, *args):
+    async def update_pair_status(self, *args) -> None:
         pass
 
-    async def main(self, loop):
+    async def main(self, loop: asyncio) -> None:
 
         ws_client = await KucoinWsClient.create(
             None, self.client, self.deal_msg, private=False

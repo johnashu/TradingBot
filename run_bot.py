@@ -3,7 +3,7 @@ from tools.utils import round_down
 
 
 class RunBot(ScanMarket):
-    async def place_buy_order(self, pair, logs_args):
+    async def place_buy_order(self, pair: Pair, logs_args: tuple) -> None:
         buy_price = pair.calc_buy_price()
         log.info(f"Setting Buy Order of {pair.amount} @  ${buy_price}")
         pair.buy_order_num = await self.trade.limit_order(
@@ -18,7 +18,7 @@ class RunBot(ScanMarket):
         )
         self.display_prices(*logs_args)
 
-    async def place_sell_order(self, pair, logs_args):
+    async def place_sell_order(self, pair: Pair, logs_args: tuple) -> None:
         if pair.buy_filled and pair.buy_sell != "sell":
             log.info(
                 f"BUY Order Filled for {pair.amount} {pair.name} @ ${pair.buy_price} for ${pair.buy_price_usd}"
@@ -32,7 +32,7 @@ class RunBot(ScanMarket):
             pair.buy_sell = "sell"
             self.display_prices(*logs_args)
 
-    async def check_sell_order_filled(self, pair, logs_args):
+    async def check_sell_order_filled(self, pair: Pair, logs_args: tuple) -> None:
         filled = pair.sell_filled
         if filled:
             log.info(
@@ -46,13 +46,13 @@ class RunBot(ScanMarket):
 
     async def cancel_flow(
         self,
-        pair,
-        orders,
-        logs_args,
-        reason="Stop Loss",
-        update_prices=False,
-        reset=False,
-    ):
+        pair: Pair,
+        orders: str,
+        logs_args: tuple,
+        reason: str = "Stop Loss",
+        update_prices: bool = False,
+        reset: bool = False,
+    ) -> None:
         # cancel_all_orders
         log.info(
             f"** {reason.upper()} ** Cancelling OrderId {orders} for Pair {pair.name} @ ${pair.reset_price}"
@@ -72,7 +72,7 @@ class RunBot(ScanMarket):
         else:
             log.info("Cancel Complete.. Restarting Cycle..")
 
-    async def check_stop_loss(self, price, pair, logs_args):
+    async def check_stop_loss(self, price: float, pair: Pair, logs_args: tuple) -> None:
         if price <= pair.stop_loss and not pair.sell_filled:
             # MARKET SELL if cancelled sell order
             # assign buy price to grab the correct P/L when sold.
@@ -81,13 +81,13 @@ class RunBot(ScanMarket):
                 pair, pair.sell_order_num, logs_args, update_prices=True
             )
 
-    async def check_reset_buy(self, price, pair, logs_args):
+    async def check_reset_buy(self, price: float, pair: Pair, logs_args: tuple) -> None:
         if price >= pair.reset_price and not pair.sell_filled:
             await self.cancel_flow(
                 pair, pair.buy_order_num, logs_args, reason="Reset Order", reset=True
             )
 
-    async def check_market_sell(self, pair, acc_amount_tokenA):
+    async def check_market_sell(self, pair: Pair, acc_amount_tokenA: list) -> None:
         if pair.market_sell:
             wallet_amount = round_down(
                 acc_amount_tokenA[0]["available"], pair.market_sell_decimals
@@ -106,7 +106,9 @@ class RunBot(ScanMarket):
             pair.update_profit_loss(market_sell=sold_for)
             log.info("MARKET SELL complete.. Restarting Cycle..")
 
-    async def run_strategy(self, pair, data, tokenA, tokenB):
+    async def run_strategy(
+        self, pair: Pair, data: dict, tokenA: str, tokenB: str
+    ) -> None:
 
         price = float(data["bestAsk"])
         volume = float(data["bestAskSize"])
@@ -146,7 +148,7 @@ class RunBot(ScanMarket):
                 # check if price has gone up and is a buy
                 await self.check_reset_buy(price, pair, logs_args)
 
-    async def update_pair_status(self, p, pair, data):
+    async def update_pair_status(self, p: str, pair: Pair, data: dict) -> None:
         if data["symbol"] == p:
             oid = data["orderId"]
             otype = data["orderType"]  # limit / market /
