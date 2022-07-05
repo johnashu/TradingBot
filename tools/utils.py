@@ -3,7 +3,7 @@ import logging as log
 
 
 def round_down(amount: str, decimals: int) -> float:
-    places = "." + "".join(["0" for _ in range(decimals)])
+    places = f'.{"".join(["0" for _ in range(decimals)])}'
     rounded = Decimal(amount).quantize(Decimal(places), rounding=ROUND_DOWN)
     return float(rounded)
 
@@ -59,8 +59,5 @@ def readable_price(num, d: int = 18, show_decimals=True, print_res=True) -> str:
     return rtn_str
 
 
-# p = calc_price_from_amount('180', '180', '0.018152', 1)
-# print(p)
-#
-
-# print(180 * 0.99)
+# places = float(f'0.{"".join(["0" for _ in range(4-1)])}1')
+# print(places)

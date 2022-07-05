@@ -6,7 +6,7 @@ import sys
 
 sys.dont_write_bytecode = True
 
-verbose = True
+verbose = False
 
 envs = Envs()
 log = start_logger(verbose=verbose)

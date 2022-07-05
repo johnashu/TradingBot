@@ -1,4 +1,3 @@
-from matplotlib.style import available
 from core.scan_market import *
 from tools.utils import round_down, calc_price_from_amount
 
@@ -95,26 +94,32 @@ class RunBot(ScanMarket):
                 pair, pair.sell_order_num, logs_args, update_prices=True
             )
 
-    async def check_reset_buy(self, price: float, pair: Pair, logs_args: tuple) -> None:
+    async def check_reset_buy(
+        self, price: float, pair: Pair, available: float, logs_args: tuple
+    ) -> None:
         if price >= pair.reset_price and not pair.sell_filled:
             await self.cancel_flow(
                 pair, pair.buy_order_num, logs_args, reason="Reset Order", reset=True
             )
-
-    async def check_market_sell(self, pair: Pair, acc_amount_tokenA: list) -> None:
-        if pair.market_sell:
-            wallet_amount = round_down(
-                acc_amount_tokenA[0]["available"], pair.token_amount_decimals
+            # Check if an order was partially filled and market sell.
+            lowest_price = float(
+                f'0.{"".join(["0" for _ in range(pair.price_decimals-1)])}1'
             )
-            log.info(f"Attempting MARKET SELL of {wallet_amount} {pair.name}")
-            oid = await self.trade.market_trade(pair.name, "sell", str(wallet_amount))
+            if available > lowest_price:
+                pair.market_sell = True
+
+    async def check_market_sell(self, pair: Pair, available: float) -> None:
+        if pair.market_sell:
+
+            log.info(f"Attempting MARKET SELL of {available} {pair.name}")
+            oid = await self.trade.market_trade(pair.name, "sell", str(available))
 
             log.info(f"MARKET SELL orderId  ::  {oid}")
 
             sold_for = await self.trade.get_market_price_sold(oid)
             pl = pair.market_sell_buy_price - sold_for
             log.info(
-                f"MARKET SELL Order Filled for {wallet_amount} ONE  @ ${sold_for}  ::  orderId {oid}  ::  P/L {pl}"
+                f"MARKET SELL Order Filled for {available} ONE  @ ${sold_for}  ::  orderId {oid}  ::  P/L {pl}"
             )
 
             pair.update_profit_loss(market_sell=sold_for)
@@ -133,6 +138,10 @@ class RunBot(ScanMarket):
         acc_amount_tokenA = await self.user.get_account_data(tokenA)
         acc_amount_tokenB = await self.user.get_account_data(tokenB)
 
+        available = round_down(
+            acc_amount_tokenA[0]["available"], pair.token_amount_decimals
+        )
+
         # Set arguments for logging.
         logs_args = (
             price,
@@ -144,7 +153,7 @@ class RunBot(ScanMarket):
         )
 
         # check if any MARKET SELLs required
-        await self.check_market_sell(pair, acc_amount_tokenA)
+        await self.check_market_sell(pair, available)
 
         # Start new buy
         if pair.new_trade:
@@ -160,7 +169,7 @@ class RunBot(ScanMarket):
                 await self.check_stop_loss(price, pair, logs_args)
 
                 # check if price has gone up and is a buy
-                await self.check_reset_buy(price, pair, logs_args)
+                await self.check_reset_buy(price, pair, available, logs_args)
 
     async def update_pair_status(self, p: str, pair: Pair, data: dict) -> None:
         if data["symbol"] == p:
