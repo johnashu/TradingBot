@@ -14,7 +14,9 @@ def calc_price_from_amount(
 
     desired_amount = (float(desired_amount) * 0.99) / float(price)
     other = (float(available) * 0.99) / float(price)
-    if other < desired_amount:
+
+    # check if funds are avialable.  Sometimes the loop will go to fast so we ensure that other is at least greater than half desired.  This will also serve as a stop in case of severe volatility
+    if desired_amount / 2 < other < desired_amount:
         log.info(f"Amount {desired_amount}  ::  Other  {other}")
         desired_amount = other
     return round_down(desired_amount, decimals)
@@ -61,3 +63,8 @@ def readable_price(num, d: int = 18, show_decimals=True, print_res=True) -> str:
 
 # places = float(f'0.{"".join(["0" for _ in range(4-1)])}1')
 # print(places)
+
+# d = 180
+# o = 90.1
+# d2 = d /2
+# print(d2 < o < d)
