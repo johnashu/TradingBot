@@ -9,15 +9,15 @@ def round_down(amount: str, decimals: int) -> float:
 
 
 def calc_price_from_amount(
-    available: str, amount: str, price: str, decimals: int
+    available: str, desired_amount: str, price: str, decimals: int
 ) -> float:
 
-    amount = (float(amount) * 0.99) / float(price)
+    desired_amount = (float(desired_amount) * 0.99) / float(price)
     other = (float(available) * 0.99) / float(price)
-    if other > amount:
-        log.info(f"Amount {amount}  ::  Other  {other}")
-        amount = other
-    return round_down(amount, decimals)
+    if other < desired_amount:
+        log.info(f"Amount {desired_amount}  ::  Other  {other}")
+        desired_amount = other
+    return round_down(desired_amount, decimals)
 
 
 def create_averages(arr: list, ts: int) -> dict:
