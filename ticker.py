@@ -5,9 +5,7 @@ class Ticker(ScanMarket):
 
     current_price = 0
 
-    async def run_strategy(
-        self, pair: Pair, data: dict, tokenA: list, tokenB: list
-    ) -> None:
+    async def run_strategy(self, pair: Pair, data: dict, *args) -> None:
 
         price = float(data["bestAsk"])
         volume = float(data["bestAskSize"])

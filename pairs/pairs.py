@@ -2,6 +2,11 @@ class Pair:
 
     profit_loss = 0
 
+    feeRate = 0.001
+
+    limit_sells_count = 0
+    market_sells_count = 0
+
     mark_price = None
     buy_sell = "buy"
     new_trade = True
@@ -85,8 +90,13 @@ class Pair:
 
     def set_buy_prices(self, price: float) -> None:
         self.buy_price = price
-        self.buy_price_usd = round(price * self.amount, self.price_decimals)
-        self.market_sell_buy_price = round(price * self.amount, self.price_decimals)
+
+        buy_price_usd_with_fee = price * self.amount
+        print(buy_price_usd_with_fee)
+        fee = buy_price_usd_with_fee * self.feeRate
+        usd = round(buy_price_usd_with_fee - fee, self.price_decimals)
+        self.buy_price_usd = usd
+        self.market_sell_buy_price = usd
 
     def set_sell_prices(self, price: float) -> None:
         self.reset_price = round(
@@ -117,10 +127,13 @@ class Pair:
     def update_profit_loss(self, inc: bool = False, market_sell: float = -1) -> None:
         if market_sell != -1:
             self.profit_loss += market_sell
+            self.market_sells_count += 1
             self.market_sell_buy_price = 0
             self.market_sell = False
+
         elif inc:
             self.profit_loss += self.profit
+            self.limit_sells_count += 1
         else:
             self.profit_loss -= self.loss_if_stopped
 

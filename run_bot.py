@@ -116,6 +116,8 @@ class RunBot(ScanMarket):
 
             log.info(f"MARKET SELL orderId  ::  {oid}")
 
+            asyncio.sleep(1)
+
             sold_for = await self.trade.get_market_price_sold(oid)
             pl = pair.market_sell_buy_price - sold_for
             log.info(
@@ -194,6 +196,7 @@ if __name__ == "__main__":
         # "LUNC-USDT": Pair(**metadata['LUNC']),
     }
     pairs.update({"all_pairs": ",".join([k for k in pairs.keys()])})
+
     rb = RunBot(creds, pairs, level=2, depth=5, market="spotMarket")
     loop = asyncio.get_event_loop()
     loop.run_until_complete(rb.main(loop))
