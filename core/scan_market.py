@@ -50,22 +50,28 @@ class ScanMarket:
     ) -> None:
         spaces = "-" * 85
         log.info(spaces)
+
         log.info(
             f"""
-Pair {pair.name}
-Price ${price}
-Mark ${pair.mark_price}
-Buy ${pair.buy_price}
-Sell ${pair.sell_price}
-Profit ${pair.profit}
-Loss  ${pair.loss_if_stopped}
-SL ${pair.stop_loss}
-Reset ${pair.reset_price}"
-Limit Sells = {pair.limit_sells_count}
-Market Sells = {pair.limit_sells_count}
+                            Pair   ::  {pair.name}
+                            Price  ::  ${price}                
+                            Mark   ::  ${pair.mark_price}
+
+                            Buy    ::  ${pair.buy_price}
+                            Sell   ::  ${pair.sell_price}
+
+                            Profit ::  ${pair.profit}
+                            Loss   ::  ${pair.loss_if_stopped}
+
+                            SL     ::  ${pair.stop_loss}
+                            Reset  ::  ${pair.reset_price}
+
+                            Limit Sells = {pair.limit_sells_count}
+                            Market Sells = {pair.limit_sells_count}
+
+                            Current Profit / Loss = ${pair.profit_loss}
             """
         )
-        log.info(f"Current Profit / Loss = ${pair.profit_loss}")
 
         if self.verbose:
             log.info(

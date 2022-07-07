@@ -88,13 +88,14 @@ class Pair:
         price = round(self.mark_price * self.swing_perc_buy, self.price_decimals)
         return price
 
+    def minus_fee(self, price: float) -> float:
+        price_usd_with_fee = price * self.amount
+        fee = price_usd_with_fee * self.feeRate
+        return round(price_usd_with_fee - fee, self.price_decimals)
+
     def set_buy_prices(self, price: float) -> None:
         self.buy_price = price
-
-        buy_price_usd_with_fee = price * self.amount
-        print(buy_price_usd_with_fee)
-        fee = buy_price_usd_with_fee * self.feeRate
-        usd = round(buy_price_usd_with_fee - fee, self.price_decimals)
+        usd = self.minus_fee(price)
         self.buy_price_usd = usd
         self.market_sell_buy_price = usd
 
@@ -103,7 +104,7 @@ class Pair:
             self.mark_price * self.swing_perc_reset, self.price_decimals
         )
         self.sell_price = round(price * self.sell_perc, self.price_decimals)
-        self.sell_price_usd = round(self.sell_price * self.amount, self.price_decimals)
+        self.sell_price_usd = self.minus_fee(self.sell_price)
         self.stop_loss = round(price * self.stop_loss_perc, self.price_decimals)
         self.profit = round(
             (self.sell_price * self.amount) - (self.buy_price * self.amount),
